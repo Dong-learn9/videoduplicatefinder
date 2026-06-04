@@ -1,93 +1,95 @@
-# Video Duplicate Finder
-Video Duplicate Finder is a cross-platform software to find duplicated video (and image) files on hard disk based on similarity. Unlike other duplicate finders this one also finds duplicates which have a different resolution, frame rate and even watermarked.
+# 视频重复查找器
 
-# Features
-- Cross-platform
-- Fast scanning speed
-- Ultra fast rescan
-- Optional calling ffmpeg functions natively for even more speed
-- Finds duplicate videos / images based on similarity (optional scan against pHash at zero cost)
-- Partial clip detection — finds when a shorter video is a partial clip of a longer one (audio fingerprinting)
-- Desktop GUI (Windows, Linux, macOS)
-- Headless CLI for scripting and automation
-- Web UI for remote/headless/NAS use
-- Docker image for easy self-hosting
+视频重复查找器是一款跨平台软件，用于根据相似度在硬盘上查找重复的视频和图像文件。与其他重复文件查找器不同，该软件还能找到通过转码或格式转换产生的重复文件。
 
-# Partial Clip Detection
+# 功能特性
 
-VDF can detect when a shorter video is a partial clip of a longer one — for example, a scene ripped from a movie, or a clip saved from a longer recording. This works even when there is no visual overlap between the two files.
+- 🌍 跨平台支持（Windows、Linux、macOS）
+- ⚡ 快速扫描速度
+- 🚀 超快速重新扫描
+- 📹 可选通过 FFmpeg 本地函数加快速度
+- 🔍 基于相似度查找重复视频/图像（支持感知哈希 pHash）
+- 🎬 部分片段检测 — 查找较短视频是否为较长视频的部分片段（音频指纹识别）
+- 🖥️ 桌面 GUI（Windows、Linux、macOS）
+- 💻 无头 CLI 用于脚本和自动化
+- 🌐 Web UI 用于远程/无头/NAS 使用
+- 🐳 Docker 镜像便于自建部署
 
-It runs as an **optional second phase** after the normal visual duplicate scan, using an audio fingerprinting pipeline (Chromaprint-style chroma extraction + sliding-window Hamming similarity matching). Matched pairs appear in the duplicate list with a **Clip Offset** column showing where in the source the clip starts.
+# 部分片段检测
 
-### Enabling it
+VDF 可以检测较短的视频是否为较长视频的部分片段 — 例如，电影中的一个场景或从较长录制中保存的片段。即使没有视觉重叠，这也能工作。
 
-In **Settings → Partial Clip Detection**, check **Enable Partial Clip Detection** and adjust:
+它在**正常视觉重复扫描后作为可选的第二阶段**运行，使用音频指纹识别管道（Chromaprint 风格的色度提取 + 滑动窗口 Hamming 相似度匹配）。
 
-| Setting | Default | Description |
+### 启用方式
+
+在**设置 → 部分片段检测**中，勾选**启用部分片段检测**并调整：
+
+| 设置 | 默认值 | 说明 |
 |---------|---------|-------------|
-| Min clip / source ratio (%) | 10 | Minimum clip duration as a percentage of the source duration. Clips shorter than this are ignored. |
-| Min audio similarity (%) | 80 | Minimum average Hamming similarity for the sliding-window fingerprint match to be accepted. |
+| 最小片段/源时长比 (%) | 10 | 片段时长相对于源时长的最小百分比。比此值更短的片段将被忽略。 |
+| 最小音频相似度 (%) | 80 | 滑动窗口指纹匹配被接受的最小平均 Hamming 相似度。 |
 
-> **Note:** Partial clip detection requires audio tracks in both files. Videos without audio are skipped.
-
----
-
-# Downloads
-
-[Daily build](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) — attachments are automatically rebuilt and replaced on every commit.
-
-Available packages per platform:
-- `GUI-<platform>` — desktop application
-- `CLI-<platform>` — command-line tool
-- `Web-<platform>` — self-contained web server
+> **注意：** 部分片段检测需要两个文件都有音频轨道。没有音频的视频将被跳过。
 
 ---
 
-# Desktop GUI
+# 下载
 
-### Requirements
+[每日构建](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) — 附件在每次提交时自动重建和替换。
 
-FFmpeg and FFprobe are required. On first launch VDF attempts to download them automatically.
-Native FFmpeg binding requires FFmpeg 8.x shared libraries (not the master branch).
+各平台可用的软件包：
+- `GUI-<platform>` — 桌面应用程序
+- `CLI-<platform>` — 命令行工具
+- `Web-<platform>` — 自包含的 Web 服务器
+
+---
+
+# 桌面 GUI
+
+### 系统要求
+
+FFmpeg 和 FFprobe 是必需的。VDF 在首次启动时会尝试自动下载。
+本地 FFmpeg 绑定需要 FFmpeg 8.x 共享库（不是 master 分支）。
 
 #### Windows
-Download the latest FFmpeg GPL shared package from https://ffmpeg.org/download.html
-Extract `ffmpeg.exe` and `ffprobe.exe` into the same folder as `VDF.GUI.exe`, a subfolder named `bin`, or ensure they are on your `PATH`.
+从 https://ffmpeg.org/download.html 下载最新的 FFmpeg GPL 共享包。
+将 `ffmpeg.exe` 和 `ffprobe.exe` 解压到与 `VDF.GUI.exe` 相同的文件夹、名为 `bin` 的子文件夹中，或确保它们在您的 `PATH` 中。
 
 #### Linux
 ```bash
 sudo apt-get update && sudo apt-get install ffmpeg
 ```
-Then run:
+然后运行：
 ```bash
 chmod +x VDF.GUI
 ./VDF.GUI
 ```
 
-**Optional: add to your application menu**
+**可选：添加到应用菜单**
 
-The Linux archive includes `videoduplicatefinder.desktop` and `icon.png`. To register the app with your desktop environment (GNOME, KDE, XFCE, etc.):
+Linux 存档包含 `videoduplicatefinder.desktop` 和 `icon.png`。要向桌面环境（GNOME、KDE、XFCE 等）注册应用程序：
 
 ```bash
-# Edit the Exec= and Icon= paths to match where you extracted the archive, e.g.:
+# 编辑 Exec= 和 Icon= 路径以匹配您解压存档的位置，例如：
 sed -i "s|/opt/videoduplicatefinder|$(pwd)|g" videoduplicatefinder.desktop
 
-# Install for the current user
+# 为当前用户安装
 mkdir -p ~/.local/share/applications
 cp videoduplicatefinder.desktop ~/.local/share/applications/
 ```
 
-The app will then appear in your application launcher with its icon.
+应用程序将在应用启动器中显示，带有其图标。
 
 #### macOS
 ```bash
 brew install ffmpeg
 ```
-Extract the archive — it contains `Video Duplicate Finder.app`. Double-click it to launch.
+解压存档 — 其中包含 `Video Duplicate Finder.app`。双击即可启动。
 
-If macOS blocks the app with "cannot be opened because the developer cannot be verified", right-click the `.app` and choose **Open**, then confirm. You only need to do this once.
+如果 macOS 显示 "无法打开，因为无法验证开发者"，右键单击 `.app` 并选择**打开**，然后确认。您只需执行一次。
 
-If macOS still refuses to launch the bundle (e.g. "library load disallowed by system policy" on macOS 14+ / Tahoe), clear the quarantine flag and re-sign every binary in the bundle ad-hoc:
+如果 macOS 仍然拒绝启动该包（例如在 macOS 14+ / Tahoe 上显示 "库加载被系统策略禁止"），清除隔离标志并重新对包中的每个二进制文件进行签名：
 ```bash
 xattr -cr "Video Duplicate Finder.app"
 codesign --force --deep --sign - "Video Duplicate Finder.app"
@@ -95,31 +97,31 @@ codesign --force --deep --sign - "Video Duplicate Finder.app"
 
 ---
 
-# CLI (Command-line Interface)
+# 命令行界面 (CLI)
 
-The CLI is useful for scripting, scheduled tasks, and headless servers where no display is available.
+CLI 对脚本编写、计划任务和没有显示的无头服务器很有用。
 
-### Requirements
+### 系统要求
 
-Same as the GUI: FFmpeg and FFprobe must be on your `PATH` or in the same directory as the `vdf-cli` binary.
+与 GUI 相同：FFmpeg 和 FFprobe 必须在您的 `PATH` 中或与 `vdf-cli` 二进制文件在同一目录中。
 
-### Installation
+### 安装
 
-Download `CLI-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) and extract it.
+从[发布页面](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x)下载 `CLI-<platform>` 并解压。
 
-On Linux/macOS, make the binary executable:
+在 Linux/macOS 上，使二进制文件可执行：
 ```bash
 chmod +x vdf-cli
 ```
 
-### Usage
+### 使用
 
-#### Scan and compare in one step
+#### 一步扫描和比较
 ```bash
 vdf-cli scan-and-compare --include /path/to/media
 ```
 
-#### Scan multiple directories, save results as JSON
+#### 扫描多个目录，将结果保存为 JSON
 ```bash
 vdf-cli scan-and-compare \
   --include /mnt/movies \
@@ -129,101 +131,101 @@ vdf-cli scan-and-compare \
   --output results.json
 ```
 
-#### Common options
-| Flag | Description | Default |
+#### 常用选项
+| 标志 | 说明 | 默认值 |
 |------|-------------|---------|
-| `--include <path>` | Directory to scan (repeatable) | required |
-| `--exclude <path>` | Directory to exclude (repeatable) | — |
-| `--threshold <n>` | Hash difference threshold | 5 |
-| `--percent <n>` | Minimum similarity % to report | 96 |
-| `--parallelism <n>` | Parallel hashing threads | 1 |
-| `--include-images` | Also scan image files | off |
-| `--use-phash` | Use perceptual hashing | off |
-| `--partial-clip-detection` | Enable partial clip detection (audio fingerprinting) | off |
-| `--partial-clip-min-ratio <n>` | Min clip/source duration ratio (0.0–1.0) | 0.10 |
-| `--partial-clip-similarity <n>` | Min audio fingerprint similarity (0.0–1.0) | 0.80 |
-| `--format json\|text\|csv` | Output format | text |
-| `--output <file>` | Write results to file instead of stdout | stdout |
-| `--settings <file>` | Load full settings from a JSON file | — |
+| `--include <path>` | 要扫描的目录（可重复） | 必需 |
+| `--exclude <path>` | 要排除的目录（可重复） | — |
+| `--threshold <n>` | 哈希差异阈值 | 5 |
+| `--percent <n>` | 报告的最小相似度 % | 96 |
+| `--parallelism <n>` | 并行哈希线程数 | 1 |
+| `--include-images` | 也扫描图像文件 | 关闭 |
+| `--use-phash` | 使用感知哈希 | 关闭 |
+| `--partial-clip-detection` | 启用部分片段检测（音频指纹） | 关闭 |
+| `--partial-clip-min-ratio <n>` | 最小片段/源时长比 (0.0–1.0) | 0.10 |
+| `--partial-clip-similarity <n>` | 最小音频指纹相似度 (0.0–1.0) | 0.80 |
+| `--format json\|text\|csv` | 输出格式 | text |
+| `--output <file>` | 将结果写入文件而不是 stdout | stdout |
+| `--settings <file>` | 从 JSON 文件加载完整设置 | — |
 
-#### Auto-mark and delete duplicates
+#### 自动标记和删除重复文件
 ```bash
-# Dry run — shows what would be deleted, no changes made (default)
+# 模拟运行 — 显示将删除的内容，不做任何更改（默认）
 vdf-cli scan-and-compare --include /mnt/media --action lowest-quality --dry-run
 
-# Move duplicates to trash (safer)
+# 移动到回收站（更安全）
 vdf-cli scan-and-compare --include /mnt/media --action lowest-quality --delete
 
-# Permanently delete (use with care)
+# 永久删除（谨慎使用）
 vdf-cli scan-and-compare --include /mnt/media --action lowest-quality --delete-permanent
 ```
 
-Available `--action` strategies:
+可用的 `--action` 策略：
 
-| Strategy | Keeps |
+| 策略 | 保留 |
 |----------|-------|
-| `lowest-quality` | Highest bitrate/resolution per group |
-| `smallest-file` | Largest file per group |
-| `shortest-duration` | Longest duration per group |
-| `worst-resolution` | Highest resolution per group |
-| `100-percent-only` | Only acts on 100% identical groups |
+| `lowest-quality` | 每组最高比特率/分辨率 |
+| `smallest-file` | 每组最大文件 |
+| `shortest-duration` | 每组最长时长 |
+| `worst-resolution` | 每组最高分辨率 |
+| `100-percent-only` | 仅作用于 100% 相同的组 |
 
-> **Note:** Automatic deletion is not recommended. Always review results with `--dry-run` first.
+> **注意：** 不建议自动删除。始终先用 `--dry-run` 查看结果。
 
 ---
 
 # Web UI
 
-The Web UI runs as a local web server and is accessed from your browser. It is designed for headless machines, NAS devices, and remote management.
+Web UI 作为本地 Web 服务器运行，通过浏览器访问。它专为无头机器、NAS 设备和远程管理而设计。
 
-> **Security note:** The Web UI is password-protected but intended for local/Docker use only. Do not expose it to the internet.
+> **安全提示：** Web UI 受密码保护，但仅供本地/Docker 使用。不要将其暴露到互联网。
 
-### Authentication
+### 身份认证
 
-On first launch, a random password is generated and printed to the console:
+首次启动时，会生成一个随机密码并打印到控制台：
 
 ```
 ============================================
-  Web UI password:  aB3xK9mQ7p
+  Web UI 密码:  aB3xK9mQ7p
 ============================================
 ```
 
-Enter this password in your browser to log in. A "Remember me" cookie keeps you logged in for 30 days.
+在浏览器中输入此密码登录。"记住我"Cookie 将使您保持登录 30 天。
 
-**Docker users:** Run `docker logs vdf-web` to see the password.
+**Docker 用户：** 运行 `docker logs vdf-web` 查看密码。
 
-| Environment variable | Description |
+| 环境变量 | 说明 |
 |---------------------|-------------|
-| `VDF_WEB_PASSWORD` | Set your own password instead of the auto-generated one |
-| `VDF_WEB_AUTH=false` | Disable authentication entirely |
+| `VDF_WEB_PASSWORD` | 设置您自己的密码而不是自动生成的密码 |
+| `VDF_WEB_AUTH=false` | 完全禁用身份认证 |
 
-### Requirements
+### 系统要求
 
-FFmpeg and FFprobe are required. When running outside Docker, VDF.Web will attempt to download them automatically on first launch. You can also install them manually via your system package manager or place them on your `PATH`.
+FFmpeg 和 FFprobe 是必需的。在 Docker 外运行时，VDF.Web 将在首次启动时尝试自动下载它们。您也可以通过系统包管理器手动安装。
 
-### Installation (self-contained archive)
+### 安装（自包含的存档）
 
-Download `Web-<platform>` from the [releases page](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x) and extract it.
+从[发布页面](https://github.com/0x90d/videoduplicatefinder/releases/tag/3.0.x)下载 `Web-<platform>` 并解压。
 
-On Linux/macOS:
+在 Linux/macOS 上：
 ```bash
 chmod +x VDF.Web
 ./VDF.Web
 ```
 
-On Windows:
+在 Windows 上：
 ```
 VDF.Web.exe
 ```
 
-Then open **http://localhost:5000** in your browser and enter the password shown in the console.
+然后在浏览器中打开 **http://localhost:5000** 并输入控制台中显示的密码。
 
-To change the port:
+更改端口：
 ```bash
 ASPNETCORE_URLS=http://+:8080 ./VDF.Web
 ```
 
-Settings and the scan database are saved to:
+设置和扫描数据库保存到：
 - Windows: `%APPDATA%\VDF\`
 - Linux: `~/.config/VDF/`
 - macOS: `~/Library/Preferences/VDF/`
@@ -232,13 +234,13 @@ Settings and the scan database are saved to:
 
 # Docker (Web UI)
 
-Docker is the easiest way to run the Web UI on a NAS, home server, or any Linux machine. FFmpeg is included in the image — no separate installation needed.
+Docker 是在 NAS、家庭服务器或任何 Linux 机器上运行 Web UI 的最简单方法。镜像中包含 FFmpeg — 无需单独安装。
 
-### Requirements
+### 系统要求
 
-- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker](https://docs.docker.com/get-docker/) 已安装
 
-### Quick start
+### 快速开始
 
 ```bash
 docker run -d \
@@ -250,11 +252,11 @@ docker run -d \
   ghcr.io/0x90d/vdf-web:latest
 ```
 
-Then open **http://localhost:8080** in your browser.
-Check the password with `docker logs vdf-web` and enter it to log in.
-Inside the Web UI, add `/media` (or whatever path you mounted) as a scan directory.
+然后在浏览器中打开 **http://localhost:8080**。
+检查密码：`docker logs vdf-web` 并输入登录。
+在 Web UI 中，添加 `/media`（或您挂载的任何路径）作为扫描目录。
 
-To set your own password:
+设置您自己的密码：
 ```bash
 docker run -d \
   --name vdf-web \
@@ -266,65 +268,65 @@ docker run -d \
   ghcr.io/0x90d/vdf-web:latest
 ```
 
-### docker compose (recommended for permanent installs)
+### docker compose（推荐用于永久安装）
 
-1. Download [`docker-compose.yml`](docker-compose.yml) from this repository.
+1. 从此存储库下载 [`docker-compose.yml`](docker-compose.yml)。
 
-2. Edit the file and add your media volume mounts. Optionally set your own password:
+2. 编辑文件并添加您的媒体卷挂载。可选设置您自己的密码：
 ```yaml
 environment:
-  - VDF_WEB_PASSWORD=mysecretpassword    # optional — otherwise check docker logs
+  - VDF_WEB_PASSWORD=mysecretpassword    # 可选 — 否则检查 docker logs
 volumes:
   - /mnt/nas/movies:/mnt/nas/movies:ro
   - /mnt/nas/series:/mnt/nas/series:ro
 ```
 
-3. Start the service:
+3. 启动服务：
 ```bash
 docker compose up -d
 ```
 
-4. Open **http://localhost:8080** in your browser and enter the password (check `docker logs` if you didn't set one).
+4. 在浏览器中打开 **http://localhost:8080** 并输入密码（如果未设置，检查 `docker logs`）。
 
-5. To update to the latest image:
+5. 更新到最新镜像：
 ```bash
 docker compose pull && docker compose up -d
 ```
 
-### Volume reference
+### 卷参考
 
-| Volume | Purpose |
+| 卷 | 用途 |
 |--------|---------|
-| `/root/.config/VDF` | Settings (`web-settings.json`) and login credentials — mount a named volume here so configuration persists across container updates |
-| `/root/.local/state/VDF` | Scan database (`ScannedFiles.db`) — mount a named volume here so hashed-file data persists across container updates |
-| Your media paths | Mount each media directory you want to scan. Read-only (`:ro`) is recommended. |
+| `/root/.config/VDF` | 设置（`web-settings.json`）和登录凭证 — 挂载一个命名卷以便配置在容器更新时保持 |
+| `/root/.local/state/VDF` | 扫描数据库（`ScannedFiles.db`） — 挂载一个命名卷以便哈希文件数据在容器更新时保持 |
+| 您的媒体路径 | 挂载您要扫描的每个媒体目录。建议使用只读（`:ro`）。 |
 
-### Notes
+### 注意
 
-- The container image is built for `linux/amd64` and `linux/arm64` (Raspberry Pi / NAS ARM boards).
-- The image is published to [GitHub Container Registry](https://github.com/0x90d/videoduplicatefinder/pkgs/container/vdf-web) and updated automatically on every commit.
+- 容器镜像为 `linux/amd64` 和 `linux/arm64`（树莓派 / NAS ARM 板）构建。
+- 镜像发布到 [GitHub 容器注册表](https://github.com/0x90d/videoduplicatefinder/pkgs/container/vdf-web)，在每次提交时自动更新。
 
 ---
 
-# Screenshots (outdated)
+# 截图（过时）
 <img src="https://user-images.githubusercontent.com/46010672/129763067-8855a538-4a4f-4831-ac42-938eae9343bd.png" width="510">
 
-# License
-Video Duplicate Finder is licensed under AGPLv3
+# 许可证
+视频重复查找器根据 AGPLv3 许可证授权。
 
-# Credits / Third Party
+# 鸣谢 / 第三方库
 - [Avalonia](https://github.com/AvaloniaUI/Avalonia)
 - [ActiPro Avalonia Controls (Free Edition)](https://github.com/Actipro/Avalonia-Controls)
 - [FFmpeg.AutoGen](https://github.com/Ruslan-B/FFmpeg.AutoGen)
 - [protobuf-net](https://github.com/protobuf-net/protobuf-net)
 - [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp)
-- [AcoustID.NET by wo80](https://github.com/wo80/AcoustID.NET) — the audio fingerprinting pipeline (Chromaprint-style chroma extraction, FIR smoothing, and fingerprint encoding) used for partial clip detection is derived from this library, licensed under LGPL 2.1
+- [AcoustID.NET by wo80](https://github.com/wo80/AcoustID.NET) — 用于部分片段检测的音频指纹识别管道（Chromaprint 风格的色度提取、FIR 平滑和指纹编码）
 
-# Building
+# 编译要求
 - .NET 9.x
-- Visual Studio 2022 or later is recommended
+- 推荐 Visual Studio 2022 或更新版本
 
-# Contributing
-- Create a pull request for each addition or fix — do not merge them into one PR
-- Unless it refers to an existing issue, write into your pull request what it does
-- For larger PRs, open an issue for discussion first
+# 贡献指南
+- 为每个添加或修复创建一个 pull request — 不要将它们合并为一个 PR
+- 除非涉及现有 issue，否则在 pull request 中说明其作用
+- 对于较大的 PR，先开启 issue 进行讨论

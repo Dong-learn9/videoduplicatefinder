@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  vdf-web:
+    image: ghcr.io/0x90d/vdf-web:latest
+    container_name: vdf-web
+    restart: always
+    
+    # 网络配置
+    ports:
+      - "8080:8080"
+    
+    # 环境变量
+    environment:
+      # Web UI 密码（修改为您的密码）
+      - VDF_WEB_PASSWORD=123456
+      # 可选：禁用认证（不推荐用于公网）
+      # - VDF_WEB_AUTH=false
+      # ASP.NET Core 配置
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      # 语言设置（中文）
+      - LANG=zh_CN.UTF-8
+      - LC_ALL=zh_CN.UTF-8
+      - TZ=Asia/Shanghai
+    
+    # 数据卷挂载
+    volumes:
+      # 扫描数据库和配置（数据持久化）
+      - vdf-db:/root/.config/VDF
+      - vdf-state:/root/.local/state/VDF
+      
+      # 媒体目录挂载（根据您的NAS路径修改）
+      # 常见飞牛NAS路径：
+      # /mnt/md0/               - RAID 存储
+      # /mnt/mnt0/              - 单盘存储
+      # /mnt/usbX/              - USB 存储
+      
+      # 示例1：挂载所有媒体
+      - /mnt/md0/movies:/media/movies:ro
+      - /mnt/md0/videos:/media/videos:ro
+      - /mnt/md0/tv:/media/tv:ro
+      
+      # 示例2：如果您的媒体在其他位置，修改上面的路径
+      # - /mnt/mnt0/storage:/media/storage:ro
+      
+      # 日志目录（可选）
+      - /opt/vdf/logs:/root/logs
+    
+    # 资源限制（根据NAS性能调整）
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '2'
+          memory: 2G
+    
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# 数据卷定义
+volumes:
+  vdf-db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/vdf/data/db
+  
+  vdf-state:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/vdf/data/state
+
+# 网络定义（可选，用于与其他容器通信）
+networks:
+  default:
+    name: vdf-network
+    driver: bridge

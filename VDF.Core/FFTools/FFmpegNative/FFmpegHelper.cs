@@ -48,9 +48,14 @@ namespace VDF.Core.FFTools.FFmpegNative {
 
 					if (CheckForFfmpegLibraryFilesInFolder(Path.GetDirectoryName(path)!))
 						return true;
-					if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-						if (CheckForFfmpegLibraryFilesInFolder(Path.Combine(Directory.GetParent(Directory.GetParent(path)!.FullName)!.FullName, "lib")))
-							return true;
+					// On macOS and Linux, shared libraries may live in a sibling "lib/"
+					// directory (e.g. BtbN builds: bin/ffmpeg + lib/libavcodec.so.62).
+					if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+						var parentDir = Directory.GetParent(path)?.Parent?.FullName;
+						if (parentDir != null) {
+							if (CheckForFfmpegLibraryFilesInFolder(Path.Combine(parentDir, "lib")))
+								return true;
+						}
 					}
 
 				}

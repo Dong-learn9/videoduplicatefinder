@@ -101,9 +101,9 @@ namespace VDF.Core {
 		// ── Database checkpoints ────────────────────────────────────────────
 		/// <summary>
 		/// Interval in minutes between automatic database saves during scanning.
-		/// 0 = disabled (only save at phase boundaries). Default 5.
+		/// 0 = disabled (only save at phase boundaries). Default 2.
 		/// </summary>
-		public int DatabaseCheckpointIntervalMinutes = 5;
+		public int DatabaseCheckpointIntervalMinutes = 2;
 
 		/// <summary>
 		/// Returns the allowed duration tolerance in seconds for a video of the given duration,

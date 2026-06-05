@@ -2,35 +2,54 @@
 @rendermode InteractiveServer
 @inject VDF.Web.Services.ScanService Scan
 @inject VDF.Web.Services.WebSettingsService WebSettings
+@inject VDF.Web.Localization.LocalizationService L
+@inject IJSRuntime JS
+@inject NavigationManager Nav
 @using System.Globalization
 
-<PageTitle>Settings — Video Duplicate Finder</PageTitle>
+<PageTitle>@L.Get("Settings.Title") — Video Duplicate Finder</PageTitle>
 
-<h1>Settings</h1>
+<h1>@L.Get("Settings.Title")</h1>
 
 <div class="start-row" style="margin-bottom:1rem;margin-top:0;">
-    <button class="primary" @onclick="SaveSettings">Save Settings</button>
+    <button class="primary" @onclick="SaveSettings">@L.Get("Settings.SaveSettings")</button>
     @if (_saveMsg != null) {
         <span class="@(_saveFailed ? "aborted-msg" : "done-msg")" style="margin:0;">@_saveMsg</span>
     }
 </div>
 
 <section class="settings-section">
-    <h2>Similarity</h2>
+    <h2>@L.Get("Settings.Language")</h2>
     <label>
-        Threshold (hash difference, 0–10, lower = stricter)
+        @L.Get("Settings.Language")
+        <select @onchange="async e => await L.SetLanguageAsync(e.Value!.ToString()!, JS, Nav)">
+            @foreach (var lang in VDF.Web.Localization.LocalizationService.SupportedLanguages) {
+                @if (L.CurrentLanguage == lang.Code) {
+                    <option value="@lang.Code" selected>@lang.NativeName</option>
+                } else {
+                    <option value="@lang.Code">@lang.NativeName</option>
+                }
+            }
+        </select>
+    </label>
+</section>
+
+<section class="settings-section">
+    <h2>@L.Get("Settings.Similarity")</h2>
+    <label>
+        @L.Get("Settings.Threshold")
         <input type="number" min="0" max="10"
                value="@Scan.Settings.Threshhold"
                @onchange="e => Scan.Settings.Threshhold = ParseByte(e.Value)" />
     </label>
     <label>
-        Minimum similarity %
+        @L.Get("Settings.MinSimilarity")
         <input type="number" min="0" max="100" step="0.5"
                value="@Scan.Settings.Percent.ToString(CultureInfo.InvariantCulture)"
                @onchange="e => Scan.Settings.Percent = ParseFloat(e.Value)" />
     </label>
     <label>
-        Duration difference tolerance %
+        @L.Get("Settings.DurationTolerance")
         <input type="number" min="0" max="100" step="1"
                value="@Scan.Settings.PercentDurationDifference.ToString(CultureInfo.InvariantCulture)"
                @onchange="e => Scan.Settings.PercentDurationDifference = ParseDouble(e.Value)" />
@@ -38,51 +57,51 @@
 </section>
 
 <section class="settings-section">
-    <h2>Scanning</h2>
+    <h2>@L.Get("Settings.Scanning")</h2>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.IncludeSubDirectories"
                @onchange="e => Scan.Settings.IncludeSubDirectories = (bool)e.Value!" />
-        Scan subdirectories
+        @L.Get("Settings.ScanSubdirs")
     </label>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.IncludeImages"
                @onchange="e => Scan.Settings.IncludeImages = (bool)e.Value!" />
-        Include images
+        @L.Get("Settings.IncludeImages")
     </label>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.UsePHashing"
                @onchange="e => Scan.Settings.UsePHashing = (bool)e.Value!" />
-        Use perceptual hashing
+        @L.Get("Settings.UsePHashing")
     </label>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.CompareHorizontallyFlipped"
                @onchange="e => Scan.Settings.CompareHorizontallyFlipped = (bool)e.Value!" />
-        Compare horizontally flipped
+        @L.Get("Settings.CompareFlipped")
     </label>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.IgnoreBlackPixels"
                @onchange="e => Scan.Settings.IgnoreBlackPixels = (bool)e.Value!" />
-        Ignore black pixels
+        @L.Get("Settings.IgnoreBlack")
     </label>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.IgnoreWhitePixels"
                @onchange="e => Scan.Settings.IgnoreWhitePixels = (bool)e.Value!" />
-        Ignore white pixels
+        @L.Get("Settings.IgnoreWhite")
     </label>
     <label>
-        Max degree of parallelism (-1 = all cores)
+        @L.Get("Settings.MaxParallelism")
         <input type="number" min="-1"
                value="@Scan.Settings.MaxDegreeOfParallelism"
                @onchange="e => Scan.Settings.MaxDegreeOfParallelism = ParseInt(e.Value)" />
     </label>
     <label>
-        Thumbnail count per file
+        @L.Get("Settings.ThumbnailCount")
         <input type="number" min="1" max="20"
                value="@Scan.Settings.ThumbnailCount"
                @onchange="e => Scan.Settings.ThumbnailCount = ParseInt(e.Value)" />
@@ -90,15 +109,15 @@
 </section>
 
 <section class="settings-section">
-    <h2>FFmpeg</h2>
+    <h2>@L.Get("Settings.FFmpeg")</h2>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.UseNativeFfmpegBinding"
                @onchange="e => Scan.Settings.UseNativeFfmpegBinding = (bool)e.Value!" />
-        Use native FFmpeg binding
+        @L.Get("Settings.NativeBinding")
     </label>
     <label>
-        Hardware acceleration
+        @L.Get("Settings.HardwareAccel")
         <select @onchange="e => Scan.Settings.HardwareAccelerationMode = Enum.Parse<VDF.Core.FFTools.FFHardwareAccelerationMode>(e.Value!.ToString()!)">
             @foreach (var mode in Enum.GetValues<VDF.Core.FFTools.FFHardwareAccelerationMode>()) {
                 <option value="@mode" selected="@(Scan.Settings.HardwareAccelerationMode == mode)">@mode</option>
@@ -106,7 +125,7 @@
         </select>
     </label>
     <label>
-        Custom FFmpeg arguments
+        @L.Get("Settings.CustomFFArgs")
         <input type="text"
                value="@Scan.Settings.CustomFFArguments"
                @onchange="e => Scan.Settings.CustomFFArguments = e.Value?.ToString() ?? string.Empty" />
@@ -114,22 +133,22 @@
 </section>
 
 <section class="settings-section">
-    <h2>Partial Clip Detection</h2>
+    <h2>@L.Get("Settings.PartialClip")</h2>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.EnablePartialClipDetection"
                @onchange="e => Scan.Settings.EnablePartialClipDetection = (bool)e.Value!" />
-        Enable partial clip detection (audio fingerprinting)
+        @L.Get("Settings.EnablePartialClip")
     </label>
     @if (Scan.Settings.EnablePartialClipDetection) {
         <label>
-            Min clip / source ratio %
+            @L.Get("Settings.MinClipRatio")
             <input type="number" min="1" max="100" step="0.1"
                    value="@((Scan.Settings.PartialClipMinRatio * 100).ToString(CultureInfo.InvariantCulture))"
                    @onchange="e => Scan.Settings.PartialClipMinRatio = ParseDouble(e.Value) / 100.0" />
         </label>
         <label>
-            Min audio similarity %
+            @L.Get("Settings.MinAudioSimilarity")
             <input type="number" min="1" max="100" step="0.1"
                    value="@((Scan.Settings.PartialClipSimilarityThreshold * 100).ToString(CultureInfo.InvariantCulture))"
                    @onchange="e => Scan.Settings.PartialClipSimilarityThreshold = ParseDouble(e.Value) / 100.0" />
@@ -138,21 +157,21 @@
 </section>
 
 <section class="settings-section">
-    <h2>WebUI Thumbnails</h2>
+    <h2>@L.Get("Settings.WebUIThumbs")</h2>
     <label>
         <input type="checkbox"
                checked="@WebSettings.AutoLoadThumbnails"
                @onchange="e => WebSettings.AutoLoadThumbnails = (bool)e.Value!" />
-        Automatically load thumbnails on results page
+        @L.Get("Settings.AutoLoadThumbs")
     </label>
     <label>
-        Thumbnail width (px) — lower = less memory, more pixelated
+        @L.Get("Settings.ThumbWidth")
         <input type="number" min="48" max="960" step="48"
                value="@WebSettings.ThumbnailWidth"
                @onchange="e => WebSettings.ThumbnailWidth = Math.Clamp(ParseInt(e.Value), 48, 960)" />
     </label>
     <label>
-        JPEG quality (10–95) — lower = smaller files, more artifacts
+        @L.Get("Settings.JpegQuality")
         <input type="number" min="10" max="95" step="5"
                value="@WebSettings.ThumbnailJpegQuality"
                @onchange="e => WebSettings.ThumbnailJpegQuality = Math.Clamp(ParseInt(e.Value), 10, 95)" />
@@ -160,36 +179,36 @@
 </section>
 
 <section class="settings-section">
-    <h2>Database</h2>
+    <h2>@L.Get("Settings.Database")</h2>
     <label>
         <input type="checkbox"
                checked="@Scan.Settings.IncludeNonExistingFiles"
                @onchange="e => Scan.Settings.IncludeNonExistingFiles = (bool)e.Value!" />
-        Scan against non-existing files (compare database entries whose files have been deleted or moved)
+        @L.Get("Settings.ScanNonExisting")
     </label>
     <label>
-        Custom database folder
+        @L.Get("Settings.CustomDbFolder")
         <input type="text"
                value="@Scan.Settings.CustomDatabaseFolder"
                @onchange="e => Scan.Settings.CustomDatabaseFolder = e.Value?.ToString() ?? string.Empty" />
     </label>
     <label>
-        Database checkpoint interval (minutes, 0 = disabled)
+        @L.Get("Settings.CheckpointInterval")
         <input type="number" min="0" max="60"
                value="@Scan.Settings.DatabaseCheckpointIntervalMinutes"
                @onchange="e => Scan.Settings.DatabaseCheckpointIntervalMinutes = ParseInt(e.Value)" />
     </label>
 
-    <h3>Maintenance</h3>
+    <h3>@L.Get("Settings.Maintenance")</h3>
     <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-        <button @onclick="CleanDatabase" disabled="@_dbBusy">Clean Database</button>
+        <button @onclick="CleanDatabase" disabled="@_dbBusy">@L.Get("Settings.CleanDatabase")</button>
         @if (!_confirmClear) {
-            <button class="danger" @onclick="() => _confirmClear = true" disabled="@_dbBusy">Clear Database</button>
+            <button class="danger" @onclick="() => _confirmClear = true" disabled="@_dbBusy">@L.Get("Settings.ClearDatabase")</button>
         }
         else {
-            <span style="color:var(--danger-color,#d33);">This will delete ALL stored data. Are you sure?</span>
-            <button class="danger" @onclick="ClearDatabase">Yes, clear</button>
-            <button @onclick="() => _confirmClear = false">Cancel</button>
+            <span style="color:var(--danger-color,#d33);">@L.Get("Settings.ClearConfirm")</span>
+            <button class="danger" @onclick="ClearDatabase">@L.Get("Settings.YesClear")</button>
+            <button @onclick="() => _confirmClear = false">@L.Get("Results.Cancel")</button>
         }
     </div>
     @if (_dbMsg != null) {
@@ -207,7 +226,7 @@
 
     void SaveSettings() {
         bool ok = Scan.SaveSettings();
-        _saveMsg = ok ? "Settings saved." : "Failed to save settings.";
+        _saveMsg = ok ? L.Get("Settings.Saved") : L.Get("Settings.FailedToSave");
         _saveFailed = !ok;
         _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => {
             _saveMsg = null;
@@ -220,11 +239,11 @@
         _dbMsg = null;
         try {
             int removed = await Scan.CleanDatabaseAsync();
-            _dbMsg = $"Cleanup complete — {removed} entry(ies) removed.";
+            _dbMsg = L.Get("Settings.CleanupComplete", removed);
             _dbMsgIsError = false;
         }
         catch (Exception ex) {
-            _dbMsg = $"Cleanup failed: {ex.Message}";
+            _dbMsg = L.Get("Settings.CleanupFailed", ex.Message);
             _dbMsgIsError = true;
         }
         _dbBusy = false;
@@ -237,11 +256,11 @@
         _dbMsg = null;
         try {
             await Scan.ClearDatabaseAsync();
-            _dbMsg = "Database cleared.";
+            _dbMsg = L.Get("Settings.DatabaseCleared");
             _dbMsgIsError = false;
         }
         catch (Exception ex) {
-            _dbMsg = $"Clear failed: {ex.Message}";
+            _dbMsg = L.Get("Settings.ClearFailed", ex.Message);
             _dbMsgIsError = true;
         }
         _dbBusy = false;

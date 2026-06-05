@@ -1,0 +1,16 @@
+.git
+.github
+.vs
+.vscode
+**/bin
+**/obj
+TestResults
+*.md
+*.sln
+VDF.GUI
+VDF.CLI
+VDF.Benchmarks
+VDF.Core.Tests
+VDF.IntegrationTests
+# Do NOT exclude VDF.Web/ffmpeg-local.tar.xz — it's needed for offline build
+!VDF.Web/ffmpeg-local.tar.xz

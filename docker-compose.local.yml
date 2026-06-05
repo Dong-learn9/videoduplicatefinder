@@ -1,0 +1,13 @@
+services:
+  vdf-web:
+    build:
+      context: .
+      dockerfile: VDF.Web/Dockerfile
+    image: vdf-web:local
+    container_name: vdf-web
+    ports:
+      - "8080:8080"
+    environment:
+      - VDF_WEB_AUTH=false
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production

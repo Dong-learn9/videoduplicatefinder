@@ -1,0 +1,72 @@
+services:
+  vdf-web:
+    build:
+      context: .
+      dockerfile: VDF.Web/Dockerfile
+    image: vdf-web:local
+    container_name: vdf-web
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    devices:
+      - /dev/dri:/dev/dri
+
+    environment:
+      - VDF_WEB_PASSWORD=changeme
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      - LANG=zh_CN.UTF-8
+      - LC_ALL=zh_CN.UTF-8
+      - TZ=Asia/Shanghai
+
+    volumes:
+      - vdf-db:/root/.config/VDF
+      - vdf-state:/root/.local/state/VDF
+      - /vol1/video:/media/video:ro
+      - vdf-logs:/root/logs
+
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  vdf-db:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /vol1/1000/Docker/vdf-web/data/db
+
+  vdf-state:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /vol1/1000/Docker/vdf-web/data/state
+
+  vdf-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /vol1/1000/Docker/vdf-web/data/logs

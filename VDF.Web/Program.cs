@@ -15,15 +15,24 @@
 //
 
 using System.Collections.Concurrent;
+using Microsoft.AspNetCore.DataProtection;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using VDF.Core;
 using VDF.Web.Services;
+using VDF.Web.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents()
 	.AddInteractiveServerComponents();
+
+// Persist Data Protection keys to the config directory (already volume-mounted in Docker).
+// This prevents antiforgery token decryption failures after container restarts,
+// which caused settings saves and scan starts to fail with 302 redirects.
+var keysPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VDF", "DataProtection-Keys");
+Directory.CreateDirectory(keysPath);
+builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<AuthService>();
@@ -31,6 +40,7 @@ builder.Services.AddSingleton<WebSettingsService>();
 // ScanService is a singleton — one scan at a time, shared across all connections.
 builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<FFmpegSetupService>();
+builder.Services.AddScoped<LocalizationService>();
 
 var app = builder.Build();
 
@@ -51,6 +61,22 @@ TaskScheduler.UnobservedTaskException += (_, e) => {
 	e.SetObserved();
 };
 
+// Graceful shutdown: save the scan database when the host is stopping
+// (e.g. Docker SIGTERM, docker stop, Ctrl+C). This prevents data loss
+// of in-progress scan results that haven't been persisted by the
+// periodic checkpoint yet.
+var lifetime = app.Services.GetRequiredService<IHostApplicationLifetime>();
+lifetime.ApplicationStopping.Register(() => {
+	app.Logger.LogInformation("Shutdown signal received — saving scan database before exit");
+	try {
+		ScanEngine.SaveDatabase();
+		app.Logger.LogInformation("Scan database saved successfully on shutdown");
+	}
+	catch (Exception ex) {
+		app.Logger.LogError(ex, "Failed to save scan database on shutdown");
+	}
+});
+
 if (!app.Environment.IsDevelopment()) {
 	app.UseExceptionHandler("/Error");
 }
@@ -62,18 +88,25 @@ app.UseAntiforgery();
 var authService = app.Services.GetRequiredService<AuthService>();
 app.Use(async (ctx, next) => {
 	var path = ctx.Request.Path.Value ?? "/";
-	// Always allow: login page, static files, Blazor framework resources
+	// Always allow: login page, auth endpoints, static files, Blazor framework resources
 	if (!authService.AuthEnabled
 		|| path.StartsWith("/login", StringComparison.OrdinalIgnoreCase)
 		|| path.StartsWith("/auth/", StringComparison.OrdinalIgnoreCase)
 		|| path.StartsWith("/_framework", StringComparison.OrdinalIgnoreCase)
 		|| path.StartsWith("/_blazor", StringComparison.OrdinalIgnoreCase)
 		|| path.StartsWith("/app.css", StringComparison.OrdinalIgnoreCase)
-		|| path.StartsWith("/app.js", StringComparison.OrdinalIgnoreCase)) {
+		|| path.StartsWith("/app.js", StringComparison.OrdinalIgnoreCase)
+		|| path.StartsWith("/thumbnail", StringComparison.OrdinalIgnoreCase)) {
 		await next();
 		return;
 	}
 	if (!authService.IsAuthenticated(ctx)) {
+		// For API/AJAX requests, return 401 instead of redirect
+		if (ctx.Request.Headers.XRequestedWith == "XMLHttpRequest"
+			|| ctx.Request.Headers.Accept.ToString().Contains("application/json")) {
+			ctx.Response.StatusCode = 401;
+			return;
+		}
 		var returnUrl = Uri.EscapeDataString(path);
 		ctx.Response.Redirect($"/login?returnUrl={returnUrl}");
 		return;

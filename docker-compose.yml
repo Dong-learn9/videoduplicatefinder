@@ -1,21 +1,87 @@
 services:
   vdf-web:
-    image: ghcr.io/0x90d/vdf-web:latest
+    build:
+      context: .
+      dockerfile: VDF.Web/Dockerfile
+    image: vdf-web:local
+    container_name: vdf-web
+    restart: unless-stopped
+
     ports:
-      - "8080:8080"
-    # environment:
-    #   - VDF_WEB_PASSWORD=changeme   # set a password (otherwise auto-generated — check docker logs)
-    #   - VDF_WEB_AUTH=false          # set to disable authentication entirely
+      - "8885:8080"
+
+    # 挂载 Intel N150 集显设备 — 启用 VAAPI/QSV 硬件加速
+    devices:
+      - /dev/dri:/dev/dri
+
+    environment:
+      # Web UI 密码（首次启动后可在设置中修改）
+      - VDF_WEB_PASSWORD=password
+      # 可选：禁用认证（不推荐公网使用）
+      # - VDF_WEB_AUTH=false
+      - ASPNETCORE_URLS=http://+:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+      - LANG=zh_CN.UTF-8
+      - LC_ALL=zh_CN.UTF-8
+      - TZ=Asia/Shanghai
+
     volumes:
-      # Add your media directories below (host_path:container_path:ro)
-      # Example:
-      #   - /mnt/nas/movies:/mnt/nas/movies:ro
-      #   - "/mnt/path with spaces:/mnt/media:ro"
-      - vdf-db:/root/.config/VDF         # web-settings.json, web-credentials.json
-      - vdf-state:/root/.local/state/VDF # ScannedFiles.db
+      # 配置和数据库持久化
+      - vdf-db:/root/.config/VDF
+      - vdf-state:/root/.local/state/VDF
+
+      # 媒体目录挂载 — 根据飞牛NAS实际路径修改
+      # 飞牛常见路径：/vol1/、/mnt/md0/、/mnt/mnt0/
+      - /vol2/1000/开心视频:/开心视频:ro
+      - /vol1/1000/固态盘临时文件:/固态盘临时文件:ro
+      - /vol1/@appshare/xunlei/downloads:/downloads:ro
+      # - /vol1/movies:/media/movies:ro
+      # - /vol1/tv:/media/tv:ro
+
+      # 日志
+      - vdf-logs:/root/logs
+
+    # N150 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 volumes:
   vdf-db:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /vol1/1000/Docker/vdf-web/data/db
+
   vdf-state:
     driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /vol1/1000/Docker/vdf-web/data/state
+
+  vdf-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /vol1/1000/Docker/vdf-web/data/logs

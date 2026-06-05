@@ -2,40 +2,41 @@
 @rendermode InteractiveServer
 @inject AuthService Auth
 @inject NavigationManager Nav
+@inject VDF.Web.Localization.LocalizationService L
 
-<PageTitle>Login — Video Duplicate Finder</PageTitle>
+<PageTitle>@L.Get("Login.Title")</PageTitle>
 
 <div class="login-container">
     <div class="login-card">
-        <h1>Video Duplicate Finder</h1>
+        <h1>@L.Get("Login.Title")</h1>
         <p class="login-hint">
-            Your password was printed in the console when the app started.<br />
-            Run <code>docker logs vdf</code> to see it.
+            @L.Get("Login.Hint")<br />
+            <code>docker logs vdf</code> @L.Get("Login.DockerHint")
         </p>
 
         <form method="post" action="/auth/login">
             <input type="hidden" name="returnUrl" value="@ReturnUrl" />
 
             <div class="login-field">
-                <label for="password">Password</label>
+                <label for="password">@L.Get("Login.Password")</label>
                 <input id="password" name="password" type="password"
                        @bind="_password" @bind:event="oninput"
-                       placeholder="Enter password" autofocus required />
+                       placeholder="@L.Get("Login.EnterPassword")" autofocus required />
             </div>
 
             <div class="login-options">
                 <label class="checkbox-label">
                     <input type="checkbox" checked />
-                    Remember me (30 days)
+                    @L.Get("Login.RememberMe")
                 </label>
             </div>
 
             @if (_hasError) {
-                <p class="login-error">Incorrect password. Check your console output or docker logs.</p>
+                <p class="login-error">@L.Get("Login.IncorrectPassword")</p>
             }
 
             <button type="submit" class="primary login-btn" disabled="@string.IsNullOrEmpty(_password)">
-                Log in
+                @L.Get("Login.LogIn")
             </button>
         </form>
     </div>

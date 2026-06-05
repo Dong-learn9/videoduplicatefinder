@@ -77,6 +77,10 @@ window.vdf = {
     },
 
     // Swipe comparer — pure JS for fluid pixel-level dragging (no server round-trips)
+    setLanguage: function (lang) {
+        document.cookie = 'vdf-lang=' + lang + ';path=/;max-age=' + (365 * 86400) + ';SameSite=Lax';
+    },
+
     initSwipe: function () {
         var el = document.querySelector('.compare-swipe');
         if (!el) return;

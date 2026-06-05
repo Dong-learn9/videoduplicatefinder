@@ -85,9 +85,10 @@ namespace VDF.Web.Services {
 		public void SetAuthCookie(HttpContext ctx, string token) {
 			ctx.Response.Cookies.Append(CookieName, token, new CookieOptions {
 				HttpOnly = true,
-				SameSite = SameSiteMode.Strict,
+				SameSite = SameSiteMode.Lax,
 				MaxAge = CookieMaxAge,
 				IsEssential = true,
+				Path = "/",
 			});
 		}
 

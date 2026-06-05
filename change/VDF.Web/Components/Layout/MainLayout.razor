@@ -1,0 +1,19 @@
+@inherits LayoutComponentBase
+@inject VDF.Web.Localization.LocalizationService L
+
+<div class="layout">
+    <header class="top-bar">
+        <div class="brand">VDF</div>
+        <nav class="nav-links">
+            <NavLink href="/" Match="NavLinkMatch.All">@L.Get("Nav.Scan")</NavLink>
+            <NavLink href="/results">@L.Get("Nav.Results")</NavLink>
+            <NavLink href="/settings">@L.Get("Nav.Settings")</NavLink>
+        </nav>
+        <div class="header-actions">
+            <ThemeToggle />
+        </div>
+    </header>
+    <main class="content">
+        @Body
+    </main>
+</div>

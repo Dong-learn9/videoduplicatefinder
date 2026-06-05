@@ -3,11 +3,12 @@
 @inject ScanService Scan
 @inject WebSettingsService WebSettings
 @inject IJSRuntime JS
+@inject VDF.Web.Localization.LocalizationService L
 @implements IDisposable
 
 <PageTitle>Results — Video Duplicate Finder</PageTitle>
 
-<h1>Duplicate Groups</h1>
+<h1>@L.Get("Results.Title")</h1>
 
 @{
     var allDuplicates = Scan.Duplicates;
@@ -20,49 +21,49 @@
 }
 
 @if (!allDuplicates.Any()) {
-    <p>No duplicates found. <a href="/">Run a scan</a> first.</p>
+    <p>@L.Get("Results.NoDuplicates") <a href="/">@L.Get("Results.RunScan")</a> @L.Get("Results.First")</p>
 }
 else {
     <div class="results-toolbar" @onkeydown="OnKeyDown" tabindex="0">
         <input class="search-box" @bind="_search" @bind:event="oninput"
-               placeholder="Filter by path..." />
+               placeholder="@L.Get("Results.FilterByPath")" />
         @if (!string.IsNullOrEmpty(_search)) {
             <button @onclick="() => _search = string.Empty">&#x2715;</button>
         }
         <span class="result-count">
-            @filteredGroups.Count group(s), @filteredGroups.SelectMany(g => g).Count() file(s)
-            @if (_selected.Count > 0) { <text> — @_selected.Count selected</text> }
+            @filteredGroups.Count @L.Get("Results.Groups"), @filteredGroups.SelectMany(g => g).Count() @L.Get("Results.Files")
+            @if (_selected.Count > 0) { <text> — @_selected.Count @L.Get("Results.Selected")</text> }
         </span>
 
         @* Auto-select dropdown *@
         <div class="dropdown-wrap">
-            <button @onclick="() => _autoSelectOpen = !_autoSelectOpen">Select &#x25BE;</button>
+            <button @onclick="() => _autoSelectOpen = !_autoSelectOpen">@L.Get("Results.Select") &#x25BE;</button>
             @if (_autoSelectOpen) {
                 <div class="dropdown-overlay" @onclick="() => _autoSelectOpen = false"></div>
                 <div class="dropdown-menu">
-                    <button @onclick="() => AutoSelect(AutoSelectMode.LowestQuality)">Lowest quality</button>
-                    <button @onclick="() => AutoSelect(AutoSelectMode.SmallestFile)">Smallest file</button>
-                    <button @onclick="() => AutoSelect(AutoSelectMode.Oldest)">Oldest (keep newest)</button>
-                    <button @onclick="() => AutoSelect(AutoSelectMode.Newest)">Newest (keep oldest)</button>
-                    <button @onclick="() => AutoSelect(AutoSelectMode.HundredPercentEqual)">100% equal groups</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.LowestQuality)">@L.Get("Results.LowestQuality")</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.SmallestFile)">@L.Get("Results.SmallestFile")</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.Oldest)">@L.Get("Results.Oldest")</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.Newest)">@L.Get("Results.Newest")</button>
+                    <button @onclick="() => AutoSelect(AutoSelectMode.HundredPercentEqual)">@L.Get("Results.HundredPercentEqual")</button>
                     <hr />
-                    <button @onclick="InvertSelection">Invert selection</button>
-                    <button @onclick="ClearSelection">Deselect all</button>
+                    <button @onclick="InvertSelection">@L.Get("Results.InvertSelection")</button>
+                    <button @onclick="ClearSelection">@L.Get("Results.DeselectAll")</button>
                 </div>
             }
         </div>
 
         @* Collapse all / Expand all *@
-        <button @onclick="CollapseAll" title="Collapse all groups">Collapse all</button>
-        <button @onclick="ExpandAll" title="Expand all groups">Expand all</button>
+        <button @onclick="CollapseAll" title="Collapse all groups">@L.Get("Results.CollapseAll")</button>
+        <button @onclick="ExpandAll" title="Expand all groups">@L.Get("Results.ExpandAll")</button>
 
         @if (_selected.Count > 0) {
             <div class="action-group">
-                <button @onclick="RemoveSelected">Remove from list</button>
-                <button @onclick="() => _confirmDelete = true" class="danger-outline">Delete (trash)</button>
-                <button @onclick="() => _confirmDeletePermanent = true" class="danger">Delete permanently</button>
-                <button @onclick="() => _showMovePanel = !_showMovePanel">Move to folder…</button>
-                <button @onclick="ClearSelection">Deselect all</button>
+                <button @onclick="RemoveSelected">@L.Get("Results.RemoveFromList")</button>
+                <button @onclick="() => _confirmDelete = true" class="danger-outline">@L.Get("Results.DeleteTrash")</button>
+                <button @onclick="() => _confirmDeletePermanent = true" class="danger">@L.Get("Results.DeletePermanently")</button>
+                <button @onclick="() => _showMovePanel = !_showMovePanel">@L.Get("Results.MoveToFolder")</button>
+                <button @onclick="ClearSelection">@L.Get("Results.DeselectAll")</button>
             </div>
         }
     </div>
@@ -70,11 +71,11 @@ else {
     @* Move panel *@
     @if (_showMovePanel) {
         <div class="action-panel">
-            <label>Destination folder:
+            <label>@L.Get("Results.DestinationFolder")
                 <input @bind="_moveDestination" placeholder="/path/to/destination" class="@(Directory.Exists(_moveDestination) ? "input-valid" : "")" />
             </label>
-            <button class="primary" @onclick="MoveSelected" disabled="@string.IsNullOrWhiteSpace(_moveDestination)">Move @_selected.Count file(s)</button>
-            <button @onclick="() => _showMovePanel = false">Cancel</button>
+            <button class="primary" @onclick="MoveSelected" disabled="@string.IsNullOrWhiteSpace(_moveDestination)">@L.Get("Results.MoveFiles", _selected.Count)</button>
+            <button @onclick="() => _showMovePanel = false">@L.Get("Results.Cancel")</button>
         </div>
     }
 
@@ -82,10 +83,10 @@ else {
     @if (_confirmDelete || _confirmDeletePermanent) {
         bool perm = _confirmDeletePermanent;
         <div class="confirm-panel">
-            <strong>&#x26A0; @(perm ? "Permanently delete" : "Move to trash")  @_selected.Count file(s)?</strong>
-            @if (perm) { <span class="warn-text">This cannot be undone.</span> }
-            <button class="danger" @onclick="() => ExecuteDelete(perm)">Confirm</button>
-            <button @onclick="() => { _confirmDelete = false; _confirmDeletePermanent = false; }">Cancel</button>
+            <strong>&#x26A0; @(perm ? L.Get("Results.PermanentlyDelete") : L.Get("Results.MoveToTrash"))  @L.Get("Results.FilesQuestion", _selected.Count)</strong>
+            @if (perm) { <span class="warn-text">@L.Get("Results.CannotBeUndone")</span> }
+            <button class="danger" @onclick="() => ExecuteDelete(perm)">@L.Get("Results.Confirm")</button>
+            <button @onclick="() => { _confirmDelete = false; _confirmDeletePermanent = false; }">@L.Get("Results.Cancel")</button>
         </div>
     }
 
@@ -109,25 +110,25 @@ else {
                 <label class="group-select-all">
                     <input type="checkbox" checked="@allGroupSelected"
                            @onchange="() => ToggleGroup(sortedItems, !allGroupSelected)" />
-                    @sortedItems.Count file(s)
+                    @sortedItems.Count @L.Get("Results.Files")
                 </label>
                 <span class="similarity-badge @SimilarityClass(maxSimilarity)">
-                    @maxSimilarity.ToString("F1")% similar
+                    @maxSimilarity.ToString("F1")% @L.Get("Results.Similar")
                 </span>
                 <div class="group-actions">
                     <select class="group-sort" title="Sort cards"
                             @onchange="e => SetGroupSort(groupId, e.Value?.ToString())">
-                        <option value="" selected="@(!_groupSorts.ContainsKey(groupId))">Sort by…</option>
-                        <option value="similarity">Similarity</option>
-                        <option value="size">Size</option>
-                        <option value="duration">Duration</option>
-                        <option value="bitrate">Bitrate</option>
-                        <option value="resolution">Resolution</option>
-                        <option value="date">Date</option>
-                        <option value="name">Name</option>
+                        <option value="" selected="@(!_groupSorts.ContainsKey(groupId))">@L.Get("Results.SortBy")</option>
+                        <option value="similarity">@L.Get("Results.Similarity")</option>
+                        <option value="size">@L.Get("Results.Size")</option>
+                        <option value="duration">@L.Get("Results.Duration")</option>
+                        <option value="bitrate">@L.Get("Results.Bitrate")</option>
+                        <option value="resolution">@L.Get("Results.Resolution")</option>
+                        <option value="date">@L.Get("Results.Date")</option>
+                        <option value="name">@L.Get("Results.Name")</option>
                     </select>
-                    <button class="compare-btn" @onclick="() => OpenCompare(sortedItems)" title="Compare fullsize">Compare</button>
-                    <button @onclick="() => KeepBest(sortedItems)" title="Select all except best quality">Keep Best</button>
+                    <button class="compare-btn" @onclick="() => OpenCompare(sortedItems)" title="Compare fullsize">@L.Get("Results.Compare")</button>
+                    <button @onclick="() => KeepBest(sortedItems)" title="Select all except best quality">@L.Get("Results.KeepBest")</button>
                     <button class="collapse-toggle" @onclick="() => ToggleCollapse(groupId)" title="@(isCollapsed ? "Expand" : "Collapse")">
                         @(isCollapsed ? "\u25B6" : "\u25BC")
                     </button>
@@ -153,8 +154,8 @@ else {
                                            @onchange="() => ToggleItem(item)" />
                                 </label>
                                 <div style="display:flex;gap:0.2rem;">
-                                    <button class="card-hide" @onclick="() => HideItem(item.Path)" title="Hide card">&#x1F441;</button>
-                                    <button class="card-remove" @onclick="() => RemoveSingle(item)" title="Remove from list">&#x2715;</button>
+                                    <button class="card-hide" @onclick="() => HideItem(item.Path)" title="@L.Get("Results.HideCard")">&#x1F441;</button>
+                                    <button class="card-remove" @onclick="() => RemoveSingle(item)" title="@L.Get("Results.RemoveFromList")">&#x2715;</button>
                                 </div>
                             </div>
 
@@ -166,7 +167,7 @@ else {
                                          onerror="this.style.display='none'" />
                                 }
                                 else {
-                                    <div class="thumb-placeholder">No preview</div>
+                                    <div class="thumb-placeholder">@L.Get("Results.NoPreview")</div>
                                 }
                                 <span class="similarity-overlay">@item.Similarity.ToString("F1")%</span>
                             </div>
@@ -179,7 +180,7 @@ else {
                                     @if (!item.IsImage) {
                                         <div class="meta-row" @onmouseover="() => SetHoveredMetric(groupId, MetricResolution)"
                                              @onmouseout="() => ClearHoveredMetric(groupId)">
-                                            <span class="meta-label">Res</span>
+                                            <span class="meta-label">@L.Get("Results.Res")</span>
                                             <span class="meta-value @MetaClass(item.IsBestFrameSize, hoveredMetric == MetricResolution && !item.IsBestFrameSize)">
                                                 @if (hoveredMetric == MetricResolution && !item.IsBestFrameSize) {
                                                     @RelativeResolution(item, sortedItems)
@@ -190,7 +191,7 @@ else {
                                         </div>
                                         <div class="meta-row" @onmouseover="() => SetHoveredMetric(groupId, MetricDuration)"
                                              @onmouseout="() => ClearHoveredMetric(groupId)">
-                                            <span class="meta-label">Dur</span>
+                                            <span class="meta-label">@L.Get("Results.Dur")</span>
                                             <span class="meta-value @MetaClass(item.IsBestDuration, hoveredMetric == MetricDuration && !item.IsBestDuration)">
                                                 @if (hoveredMetric == MetricDuration && !item.IsBestDuration) {
                                                     @RelativeDuration(item, sortedItems)
@@ -201,18 +202,18 @@ else {
                                         </div>
                                         <div class="meta-row" @onmouseover="() => SetHoveredMetric(groupId, MetricBitrate)"
                                              @onmouseout="() => ClearHoveredMetric(groupId)">
-                                            <span class="meta-label">Bitrate</span>
+                                            <span class="meta-label">@L.Get("Results.Bitrate")</span>
                                             <span class="meta-value @MetaClass(item.IsBestBitRateKbs, hoveredMetric == MetricBitrate && !item.IsBestBitRateKbs)">
                                                 @if (hoveredMetric == MetricBitrate && !item.IsBestBitRateKbs) {
                                                     @RelativePercentage(item.BitRateKbs, sortedItems.Where(i => i.IsBestBitRateKbs).Select(i => i.BitRateKbs).FirstOrDefault())
                                                 } else {
-                                                    @item.BitRateKbs<text> kbps</text>
+                                                    @item.BitRateKbs<text> @L.Get("Results.Kbps")</text>
                                                 }
                                             </span>
                                         </div>
                                         <div class="meta-row" @onmouseover="() => SetHoveredMetric(groupId, MetricFps)"
                                              @onmouseout="() => ClearHoveredMetric(groupId)">
-                                            <span class="meta-label">FPS</span>
+                                            <span class="meta-label">@L.Get("Results.FPS")</span>
                                             <span class="meta-value @MetaClass(item.IsBestFps, hoveredMetric == MetricFps && !item.IsBestFps)">
                                                 @if (hoveredMetric == MetricFps && !item.IsBestFps) {
                                                     @RelativePercentageFloat(item.Fps, sortedItems.Where(i => i.IsBestFps).Select(i => i.Fps).FirstOrDefault())
@@ -222,23 +223,23 @@ else {
                                             </span>
                                         </div>
                                         <div class="meta-row">
-                                            <span class="meta-label">Format</span>
+                                            <span class="meta-label">@L.Get("Results.Format")</span>
                                             <span class="meta-value">@(item.Format ?? "?")</span>
                                         </div>
                                     }
                                     else {
                                         <div class="meta-row">
-                                            <span class="meta-label">Res</span>
+                                            <span class="meta-label">@L.Get("Results.Res")</span>
                                             <span class="meta-value @(item.IsBestFrameSize ? "meta-best" : "")">@(item.FrameSize ?? "?")</span>
                                         </div>
                                         <div class="meta-row">
-                                            <span class="meta-label">Format</span>
+                                            <span class="meta-label">@L.Get("Results.Format")</span>
                                             <span class="meta-value">@(item.Format ?? "?")</span>
                                         </div>
                                     }
                                     <div class="meta-row" @onmouseover="() => SetHoveredMetric(groupId, MetricSize)"
                                          @onmouseout="() => ClearHoveredMetric(groupId)">
-                                        <span class="meta-label">Size</span>
+                                        <span class="meta-label">@L.Get("Results.Size")</span>
                                         <span class="meta-value @MetaClass(item.IsBestSize, hoveredMetric == MetricSize && !item.IsBestSize)">
                                             @if (hoveredMetric == MetricSize && !item.IsBestSize) {
                                                 @RelativePercentageLong(item.SizeLong, sortedItems.Where(i => i.IsBestSize).Select(i => i.SizeLong).FirstOrDefault())
@@ -251,10 +252,10 @@ else {
 
                                 <div class="card-badges">
                                     @if (isBest) {
-                                        <span class="badge-best">Best quality</span>
+                                        <span class="badge-best">@L.Get("Results.BestQuality")</span>
                                     }
                                     @if (item.Flags.HasFlag(VDF.Core.DuplicateFlags.PartialClip)) {
-                                        <span class="badge-partial-clip">partial clip @item.PartialClipOffsetDisplay</span>
+                                        <span class="badge-partial-clip">@L.Get("Results.PartialClip") @item.PartialClipOffsetDisplay</span>
                                     }
                                 </div>
                             </div>
@@ -263,7 +264,7 @@ else {
 
                     @if (hiddenCount > 0) {
                         <div class="hidden-indicator" @onclick="() => ShowAllInGroup(sortedItems)">
-                            +@hiddenCount hidden — click to show all
+                            +@hiddenCount @L.Get("Results.Hidden")
                         </div>
                     }
                 </div>
@@ -278,12 +279,12 @@ else {
     var itemB = _compareItems[_compareB];
     <div class="compare-overlay active" id="compare-modal">
         <div class="compare-header">
-            <h3>Compare</h3>
+            <h3>@L.Get("Results.Compare")</h3>
             <button class="compare-close" @onclick="CloseCompare">&#x2715;</button>
         </div>
         <div class="compare-mode-tabs">
-            <button class="@(_compareMode == CompareMode.SideBySide ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.SideBySide)">Side by Side</button>
-            <button class="@(_compareMode == CompareMode.Swipe ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.Swipe)">Swipe</button>
+            <button class="@(_compareMode == CompareMode.SideBySide ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.SideBySide)">@L.Get("Results.SideBySide")</button>
+            <button class="@(_compareMode == CompareMode.Swipe ? "active" : "")" @onclick="() => SetCompareMode(CompareMode.Swipe)">@L.Get("Results.Swipe")</button>
         </div>
         <div class="compare-selector">
             @for (int i = 0; i < _compareItems.Count; i++) {
@@ -306,7 +307,7 @@ else {
                         </div>
                         <div class="compare-pane-info">
                             <div class="compare-pane-label">@System.IO.Path.GetFileName(itemA.Path)</div>
-                            <div class="compare-pane-meta">@(itemA.FrameSize) | @FormatSize(itemA.SizeLong) | @itemA.BitRateKbs kbps</div>
+                            <div class="compare-pane-meta">@(itemA.FrameSize) | @FormatSize(itemA.SizeLong) | @itemA.BitRateKbs @L.Get("Results.Kbps")</div>
                         </div>
                     </div>
                     <div class="compare-pane-divider"></div>
@@ -316,7 +317,7 @@ else {
                         </div>
                         <div class="compare-pane-info">
                             <div class="compare-pane-label">@System.IO.Path.GetFileName(itemB.Path)</div>
-                            <div class="compare-pane-meta">@(itemB.FrameSize) | @FormatSize(itemB.SizeLong) | @itemB.BitRateKbs kbps</div>
+                            <div class="compare-pane-meta">@(itemB.FrameSize) | @FormatSize(itemB.SizeLong) | @itemB.BitRateKbs @L.Get("Results.Kbps")</div>
                         </div>
                     </div>
                 </div>
@@ -343,22 +344,22 @@ else {
 @if (_menuVisible && _menuItem != null) {
     <div class="ctx-overlay" @onclick="HideContextMenu"></div>
     <div class="ctx-menu" style="left:@(_menuX.ToString("F0"))px;top:@(_menuY.ToString("F0"))px">
-        <button @onclick="() => OpenFile(_menuItem)">Open file</button>
-        <button @onclick="() => OpenFolder(_menuItem)">Open folder</button>
-        <button @onclick="() => CopyPath(_menuItem)">Copy path</button>
+        <button @onclick="() => OpenFile(_menuItem)">@L.Get("Results.OpenFile")</button>
+        <button @onclick="() => OpenFolder(_menuItem)">@L.Get("Results.OpenFolder")</button>
+        <button @onclick="() => CopyPath(_menuItem)">@L.Get("Results.CopyPath")</button>
         <hr />
         <button @onclick="() => { ToggleItem(_menuItem); HideContextMenu(); }">
-            @(_selected.Contains(_menuItem) ? "Deselect" : "Select")
+            @(_selected.Contains(_menuItem) ? L.Get("Results.Deselect") : L.Get("Results.SelectItem"))
         </button>
         @if (_menuGroup != null) {
             bool allSel = _menuGroup.All(i => _selected.Contains(i));
             <button @onclick="() => { ToggleGroup(_menuGroup, !allSel); HideContextMenu(); }">
-                @(allSel ? "Deselect group" : "Select group")
+                @(allSel ? L.Get("Results.DeselectGroup") : L.Get("Results.SelectGroup"))
             </button>
         }
         <hr />
-        <button @onclick="() => { HideItem(_menuItem.Path); HideContextMenu(); }">Hide card</button>
-        <button @onclick="() => RemoveSingle(_menuItem)">Remove from list</button>
+        <button @onclick="() => { HideItem(_menuItem.Path); HideContextMenu(); }">@L.Get("Results.HideCard")</button>
+        <button @onclick="() => RemoveSingle(_menuItem)">@L.Get("Results.RemoveFromList")</button>
     </div>
 }
 
@@ -476,9 +477,9 @@ else {
         _selected.Clear();
         _confirmDelete = false;
         _confirmDeletePermanent = false;
-        string verb = permanent ? "permanently deleted" : "moved to trash";
-        string msg = $"{deleted} file(s) {verb}.";
-        if (failed > 0) msg += $" {failed} failed: {string.Join("; ", errors.Take(3))}";
+        string verb = permanent ? L.Get("Results.PermanentlyDeleted") : L.Get("Results.MovedToTrash");
+        string msg = $"{deleted} {L.Get("Results.Files")} {verb}.";
+        if (failed > 0) msg += $" {failed} {L.Get("Results.Failed")}: {string.Join("; ", errors.Take(3))}";
         ShowMsg(msg, failed > 0);
     }
 
@@ -486,8 +487,8 @@ else {
         var (moved, failed, errors) = Scan.MoveItems(_selected.ToList(), _moveDestination);
         _selected.Clear();
         _showMovePanel = false;
-        string msg = $"{moved} file(s) moved to '{_moveDestination}'.";
-        if (failed > 0) msg += $" {failed} failed: {string.Join("; ", errors.Take(3))}";
+        string msg = L.Get("Results.FilesMovedTo", moved, _moveDestination);
+        if (failed > 0) msg += $" {failed} {L.Get("Results.Failed")}: {string.Join("; ", errors.Take(3))}";
         ShowMsg(msg, failed > 0);
     }
 

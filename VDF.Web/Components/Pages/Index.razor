@@ -2,17 +2,18 @@
 @rendermode InteractiveServer
 @inject ScanService Scan
 @inject FFmpegSetupService FFmpegSetup
+@inject VDF.Web.Localization.LocalizationService L
 @implements IDisposable
 
-<PageTitle>Scan — Video Duplicate Finder</PageTitle>
+<PageTitle>@L.Get("Scan.Title") — Video Duplicate Finder</PageTitle>
 
-<h1>Scan</h1>
+<h1>@L.Get("Scan.Title")</h1>
 
 @* FFmpeg setup banner *@
 @if (FFmpegSetup.State == FFmpegSetupState.Checking) {
     <div class="ffmpeg-banner checking">
         <span class="spinner"></span>
-        Checking FFmpeg availability...
+        @L.Get("Scan.CheckingFFmpeg")
     </div>
 }
 @if (FFmpegSetup.State == FFmpegSetupState.Downloading) {
@@ -26,32 +27,32 @@
 }
 @if (FFmpegSetup.State == FFmpegSetupState.DockerWarning) {
     <div class="ffmpeg-banner warning">
-        <strong>FFmpeg not found</strong>
+        <strong>@L.Get("Scan.FFmpegNotFound")</strong>
         <p>@FFmpegSetup.StatusMessage</p>
     </div>
 }
 @if (FFmpegSetup.State == FFmpegSetupState.Failed) {
     <div class="ffmpeg-banner failed">
         <div>
-            <strong>FFmpeg download failed</strong>
+            <strong>@L.Get("Scan.FFmpegDownloadFailed")</strong>
             <p>@FFmpegSetup.StatusMessage</p>
         </div>
-        <button @onclick="RetryFfmpegSetup">Retry</button>
+        <button @onclick="RetryFfmpegSetup">@L.Get("Scan.Retry")</button>
     </div>
 }
 
 @if (Scan.State == ScanState.Error) {
     <div class="error-box">
-        <strong>Error</strong>
+        <strong>@L.Get("Scan.Error")</strong>
         <p>@Scan.ErrorMessage</p>
-        <button @onclick="Scan.Reset">Dismiss</button>
+        <button @onclick="Scan.Reset">@L.Get("Scan.Dismiss")</button>
     </div>
 }
 
 @if (Scan.State == ScanState.Scanning || Scan.State == ScanState.Comparing || Scan.State == ScanState.RetrievingThumbnails) {
     <div class="progress-section">
         @if (Scan.State == ScanState.Scanning) {
-            <p class="state-label">Hashing files...</p>
+            <p class="state-label">@L.Get("Scan.HashingFiles")</p>
             @if (Scan.LastProgress is { } p && p.Max > 0) {
                 int pct = (int)(100L * p.Current / p.Max);
                 <div class="progress-bar-track">
@@ -69,12 +70,12 @@
         else if (Scan.State == ScanState.Comparing) {
             <p class="state-label">
                 <span class="spinner"></span>
-                Comparing @(Scan.FilesHashed > 0 ? $"{Scan.FilesHashed:N0} hashed files" : "files") for duplicates...
+                @(Scan.FilesHashed > 0 ? L.Get("Scan.ComparingFiles", Scan.FilesHashed) : L.Get("Scan.ComparingFilesShort"))
             </p>
-            <p class="comparing-note">This may take a while depending on library size.</p>
+            <p class="comparing-note">@L.Get("Scan.ComparingNote")</p>
         }
         else {
-            <p class="state-label">Retrieving thumbnails...</p>
+            <p class="state-label">@L.Get("Scan.RetrievingThumbnails")</p>
             @if (Scan.ThumbnailMax > 0) {
                 int pct = (int)(100L * Scan.ThumbnailCurrent / Scan.ThumbnailMax);
                 <div class="progress-bar-track">
@@ -84,20 +85,20 @@
             }
         }
         <div class="actions">
-            <button @onclick="Scan.Pause" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">Pause</button>
-            <button @onclick="Scan.Resume" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">Resume</button>
-            <button class="danger" @onclick="Scan.Stop">Stop</button>
+            <button @onclick="Scan.Pause" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">@L.Get("Scan.Pause")</button>
+            <button @onclick="Scan.Resume" disabled="@(Scan.State == ScanState.RetrievingThumbnails)">@L.Get("Scan.Resume")</button>
+            <button class="danger" @onclick="Scan.Stop">@L.Get("Scan.Stop")</button>
         </div>
     </div>
 }
 else {
     <section class="scan-config">
-        <h2>Include paths</h2>
+        <h2>@L.Get("Scan.IncludePaths")</h2>
         <div class="path-list">
             @foreach (var path in Scan.Settings.IncludeList.ToList()) {
                 bool valid = Directory.Exists(path);
                 <div class="path-entry">
-                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found or not accessible")">@(valid ? "\u2713" : "\u2717")</span>
+                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? L.Get("Scan.Accessible") : L.Get("Scan.NotAccessible"))">@(valid ? "\u2713" : "\u2717")</span>
                     <span>@path</span>
                     <button @onclick="() => RemoveInclude(path)">&#x2715;</button>
                 </div>
@@ -105,17 +106,17 @@ else {
         </div>
         <div class="add-path">
             <input @bind="_newInclude" @bind:event="oninput" @onkeydown="OnIncludeKeyDown"
-                   placeholder="/path/to/scan" class="@PathInputClass(_newInclude)" />
-            <button @onclick="AddInclude" disabled="@string.IsNullOrWhiteSpace(_newInclude)">Add</button>
-            <button class="browse-btn" @onclick="() => _includeBrowser?.Open()">Browse…</button>
+                   placeholder="@L.Get("Scan.PathToScan")" class="@PathInputClass(_newInclude)" />
+            <button @onclick="AddInclude" disabled="@string.IsNullOrWhiteSpace(_newInclude)">@L.Get("Scan.Add")</button>
+            <button class="browse-btn" @onclick="() => _includeBrowser?.Open()">@L.Get("Scan.Browse")</button>
         </div>
 
-        <h2>Exclude paths</h2>
+        <h2>@L.Get("Scan.ExcludePaths")</h2>
         <div class="path-list">
             @foreach (var path in Scan.Settings.BlackList.ToList()) {
                 bool valid = Directory.Exists(path);
                 <div class="path-entry">
-                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? "Accessible" : "Not found")">@(valid ? "\u2713" : "\u2717")</span>
+                    <span class="path-status @(valid ? "valid" : "invalid")" title="@(valid ? L.Get("Scan.Accessible") : L.Get("Scan.NotFound"))">@(valid ? "\u2713" : "\u2717")</span>
                     <span>@path</span>
                     <button @onclick="() => Scan.Settings.BlackList.Remove(path)">&#x2715;</button>
                 </div>
@@ -123,9 +124,9 @@ else {
         </div>
         <div class="add-path">
             <input @bind="_newExclude" @bind:event="oninput" @onkeydown="OnExcludeKeyDown"
-                   placeholder="/path/to/exclude" />
-            <button @onclick="AddExclude" disabled="@string.IsNullOrWhiteSpace(_newExclude)">Add</button>
-            <button class="browse-btn" @onclick="() => _excludeBrowser?.Open()">Browse…</button>
+                   placeholder="@L.Get("Scan.PathToExclude")" />
+            <button @onclick="AddExclude" disabled="@string.IsNullOrWhiteSpace(_newExclude)">@L.Get("Scan.Add")</button>
+            <button class="browse-btn" @onclick="() => _excludeBrowser?.Open()">@L.Get("Scan.Browse")</button>
         </div>
 
         <FolderBrowser @ref="_includeBrowser" OnFolderSelected="OnIncludeFolderSelected" />
@@ -133,12 +134,12 @@ else {
 
         <div class="start-row">
             @if (Scan.State == ScanState.Done || Scan.State == ScanState.Aborted || Scan.State == ScanState.Error) {
-                <button @onclick="Scan.Reset">Reset</button>
+                <button @onclick="Scan.Reset">@L.Get("Scan.Reset")</button>
             }
-            <button @onclick="SaveSettings" title="Save current settings to disk">Save settings</button>
+            <button @onclick="SaveSettings" title="Save current settings to disk">@L.Get("Scan.SaveSettings")</button>
             <button class="primary" @onclick="Scan.StartScanAndCompare"
                     disabled="@(Scan.Settings.IncludeList.Count == 0 || !FFmpegSetup.IsReady)">
-                Start Scan
+                @L.Get("Scan.StartScan")
             </button>
         </div>
 
@@ -146,10 +147,10 @@ else {
             <p class="@(_saveFailed ? "aborted-msg" : "done-msg")">@_saveMsg</p>
         }
         @if (Scan.State == ScanState.Done) {
-            <p class="done-msg">Scan complete — <a href="/results">view @Scan.Duplicates.Count result(s)</a></p>
+            <p class="done-msg">@(new MarkupString(L.Get("Scan.ScanComplete", Scan.Duplicates.Count).Replace("view ", "<a href=\"/results\">").Replace(" result(s)", " " + L.Get("Results.Files") + "</a>")))</p>
         }
         @if (Scan.State == ScanState.Aborted) {
-            <p class="aborted-msg">Scan was stopped.</p>
+            <p class="aborted-msg">@L.Get("Scan.ScanStopped")</p>
         }
     </section>
 }
@@ -219,7 +220,7 @@ else {
 
     void SaveSettings() {
         bool ok = Scan.SaveSettings();
-        _saveMsg = ok ? "Settings saved." : "Failed to save settings.";
+        _saveMsg = ok ? L.Get("Scan.SettingsSaved") : L.Get("Scan.FailedToSave");
         _saveFailed = !ok;
         _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => {
             _saveMsg = null;

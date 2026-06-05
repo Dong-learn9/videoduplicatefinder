@@ -1,0 +1,64 @@
+@page "/login"
+@rendermode InteractiveServer
+@inject AuthService Auth
+@inject NavigationManager Nav
+@inject VDF.Web.Localization.LocalizationService L
+
+<PageTitle>@L.Get("Login.Title")</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <h1>@L.Get("Login.Title")</h1>
+        <p class="login-hint">
+            @L.Get("Login.Hint")<br />
+            <code>docker logs vdf</code> @L.Get("Login.DockerHint")
+        </p>
+
+        <form method="post" action="/auth/login">
+            <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+
+            <div class="login-field">
+                <label for="password">@L.Get("Login.Password")</label>
+                <input id="password" name="password" type="password"
+                       @bind="_password" @bind:event="oninput"
+                       placeholder="@L.Get("Login.EnterPassword")" autofocus required />
+            </div>
+
+            <div class="login-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" checked />
+                    @L.Get("Login.RememberMe")
+                </label>
+            </div>
+
+            @if (_hasError) {
+                <p class="login-error">@L.Get("Login.IncorrectPassword")</p>
+            }
+
+            <button type="submit" class="primary login-btn" disabled="@string.IsNullOrEmpty(_password)">
+                @L.Get("Login.LogIn")
+            </button>
+        </form>
+    </div>
+</div>
+
+@code {
+    string _password = string.Empty;
+    bool _hasError;
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "error")]
+    string? Error { get; set; }
+
+    [Inject] IHttpContextAccessor HttpContextAccessor { get; set; } = default!;
+
+    protected override void OnInitialized() {
+        if (!Auth.AuthEnabled || Auth.IsAuthenticated(HttpContextAccessor.HttpContext!)) {
+            Nav.NavigateTo("/", forceLoad: true);
+            return;
+        }
+        _hasError = Error == "1";
+    }
+}

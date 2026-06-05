@@ -1,0 +1,129 @@
+// /*
+//     Copyright (C) 2026 0x90d
+//     This file is part of VideoDuplicateFinder
+//     VideoDuplicateFinder is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU Affero General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//     VideoDuplicateFinder is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//     GNU Affero General Public License for more details.
+//     You should have received a copy of the GNU Affero General Public License
+//     along with VideoDuplicateFinder.  If not, see <http://www.gnu.org/licenses/>.
+// */
+//
+
+
+namespace VDF.Core {
+	public enum FolderMatchMode { None, SameFolderOnly, DifferentFolderOnly }
+
+	public sealed class Settings {
+		// Settable so System.Text.Json can populate these from --settings JSON; without
+		// a setter STJ silently leaves them empty even with IncludeFields=true (read-only
+		// collection properties aren't repopulated by the default object converter).
+		public HashSet<string> IncludeList { get; set; } = new HashSet<string>();
+		public HashSet<string> BlackList { get; set; } = new HashSet<string>();
+
+		public bool IgnoreReadOnlyFolders;
+		public bool IgnoreReparsePoints;
+		public bool ExcludeHardLinks;
+		public bool GeneratePreviewThumbnails;
+		public bool UseNativeFfmpegBinding;
+		public bool IncludeSubDirectories = true;
+		public bool IncludeImages = true;
+		public bool ExtendedFFToolsLogging;
+		public bool LogExcludedFiles;
+		public bool AlwaysRetryFailedSampling;
+		public bool IgnoreBlackPixels;
+		public bool IgnoreWhitePixels;
+		public bool CompareHorizontallyFlipped;
+		public bool IncludeNonExistingFiles;
+		public bool ScanAgainstEntireDatabase;
+		public FolderMatchMode FolderMatchMode;
+		public int SameFolderDepth = 1;
+		public bool UsePHashing;
+		public bool UseExifCreationDate;
+		public string LanguageCode = "en";
+
+		public FFTools.FFHardwareAccelerationMode HardwareAccelerationMode;
+
+		public byte Threshhold = 5;
+		public float Percent = 96f;
+		public double PercentDurationDifference = 20d;
+		public double DurationDifferenceMinSeconds;
+		public double DurationDifferenceMaxSeconds;
+		public double MaxSamplingDurationSeconds;
+
+		public int ThumbnailCount = 1;
+		/// <summary>Maximum width in pixels for display thumbnails (0 = original resolution).</summary>
+		public int ThumbnailMaxWidth = 100;
+		public int MaxDegreeOfParallelism = 1;
+
+		public string CustomFFArguments = string.Empty;
+		public string CustomDatabaseFolder = string.Empty;
+
+		public bool FilterByFilePathContains;
+		public List<string> FilePathContainsTexts = new();
+		public bool FilterByFilePathNotContains;
+		public List<string> FilePathNotContainsTexts = new();
+		public bool FilterByFileSize;
+		public int MaximumFileSize;
+		public int MinimumFileSize;
+
+		// ── Partial clip detection ──────────────────────────────────────────────
+		/// <summary>Enable audio-fingerprint-based partial clip detection.</summary>
+		public bool EnablePartialClipDetection;
+		/// <summary>
+		/// Minimum ratio of clip-duration / source-duration for a pair to be a candidate.
+		/// Default 0.10 (clip must be at least 10% of the longer video).
+		/// </summary>
+		public double PartialClipMinRatio = 0.10;
+		/// <summary>
+		/// Minimum average Hamming similarity (0–1) for a sliding-window match to be
+		/// accepted as a partial clip.  Default 0.80.
+		/// </summary>
+		public double PartialClipSimilarityThreshold = 0.80;
+		/// <summary>
+		/// When true, partial clip matches must also pass a visual frame check at the
+		/// matched offset. Suppresses false positives from videos sharing the same audio
+		/// (e.g. TikToks reusing a song) but with different visual content.
+		/// </summary>
+		public bool PartialClipRequireVisualMatch = true;
+		/// <summary>
+		/// Minimum visual similarity (0–1) for the on-demand frame check used by
+		/// <see cref="PartialClipRequireVisualMatch"/>.  Default 0.85.
+		/// Compared via pHash when <see cref="UsePHashing"/> is enabled, otherwise via
+		/// 32×32 grayscale percentage difference.
+		/// </summary>
+		public double PartialClipVisualThreshold = 0.85;
+
+		// ── Database checkpoints ────────────────────────────────────────────
+		/// <summary>
+		/// Interval in minutes between automatic database saves during scanning.
+		/// 0 = disabled (only save at phase boundaries). Default 2.
+		/// </summary>
+		public int DatabaseCheckpointIntervalMinutes = 2;
+
+		/// <summary>
+		/// Returns the allowed duration tolerance in seconds for a video of the given duration,
+		/// based on <see cref="PercentDurationDifference"/>, <see cref="DurationDifferenceMinSeconds"/>,
+		/// and <see cref="DurationDifferenceMaxSeconds"/>. When the percent rule is disabled (0%),
+		/// the seconds bounds act as a flat tolerance so users can run a seconds-only comparison.
+		/// </summary>
+		internal double GetDurationToleranceSeconds(double durationSeconds) {
+			if (PercentDurationDifference > 0) {
+				double toleranceSeconds = durationSeconds * PercentDurationDifference / 100d;
+				if (DurationDifferenceMinSeconds > 0)
+					toleranceSeconds = Math.Max(toleranceSeconds, DurationDifferenceMinSeconds);
+				if (DurationDifferenceMaxSeconds > 0)
+					toleranceSeconds = Math.Min(toleranceSeconds, DurationDifferenceMaxSeconds);
+				return Math.Max(0d, toleranceSeconds);
+			}
+			// Percent rule disabled: tolerance comes solely from the seconds bounds. Without a
+			// percent term, Max would otherwise pin the tolerance to 0; instead take the largest
+			// enabled bound so a seconds-only setup behaves like a flat tolerance.
+			return Math.Max(0d, Math.Max(DurationDifferenceMinSeconds, DurationDifferenceMaxSeconds));
+		}
+	}
+}
